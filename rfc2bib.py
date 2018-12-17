@@ -29,13 +29,15 @@ def normalize_authors(authors):
     authors_reversed = map(lambda a: a.split()[-1] + ', ' + ' '.join(a.split()[0:-1]), authors)
     return ' and '.join(authors_reversed)
 
-def main(required_rfcs=None):
+def main(required_rfcs=None, lowercase_key=False):
     index = etree.fromstring(requests.get(URL_RFC_XML).content)
     rfcs = index.findall(tag_prefix('rfc-entry'))
 
     for r in rfcs:
         d = {}
         d['key'] = r.find(tag_prefix('doc-id')).text
+        if lowercase_key:
+            d['key'] = d['key'].lower()
         d['number'] = int(d['key'][3:])
         if required_rfcs is not None and d['number'] not in required_rfcs:
             continue
@@ -53,7 +55,9 @@ def main(required_rfcs=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("rfcs", type=int, nargs="*")
+    parser.add_argument("-l", "--lowercase", help="Lowercase the RFC in the key", action="store_true")
+    parser.add_argument("-L", "--uppercase", dest="lowercase", help="Uppercase the RFC in the key", action="store_false")
 
     args = parser.parse_args()
     rfcs = set(args.rfcs) if len(args.rfcs) != 0 else None
-    main(rfcs)
+    main(rfcs, lowercase_key=args.lowercase)
