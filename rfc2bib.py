@@ -29,7 +29,7 @@ def normalize_authors(authors):
     authors_reversed = map(lambda a: a.split()[-1] + ', ' + ' '.join(a.split()[0:-1]), authors)
     return ' and '.join(authors_reversed)
 
-def main():
+def main(required_rfcs=None):
     index = etree.fromstring(requests.get(URL_RFC_XML).content)
     rfcs = index.findall(tag_prefix('rfc-entry'))
 
@@ -37,6 +37,8 @@ def main():
         d = {}
         d['key'] = r.find(tag_prefix('doc-id')).text
         d['number'] = int(d['key'][3:])
+        if required_rfcs is not None and d['number'] not in required_rfcs:
+            continue
         d['title'] = r.find(tag_prefix('title')).text
         _a = []
         for a in r.findall(tag_prefix('author')):
@@ -50,6 +52,8 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("rfcs", type=int, nargs="*")
 
     args = parser.parse_args()
-    main()
+    rfcs = set(args.rfcs) if len(args.rfcs) != 0 else None
+    main(rfcs)
